@@ -1,0 +1,64 @@
+body {
+  font-family:
+    Inter, system-ui, Avenir, 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
+    'Î¢ÈíÑÅºÚ', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin: 0;
+  color: var(--ep-text-color-primary);
+  background-color: transparent;
+}
+
+html,
+body,
+#app,
+.main-container,
+.ep-menu,
+.ep-sub-menu,
+.ep-menu-item,
+.ep-card,
+.ep-table,
+.ep-dialog,
+.ep-drawer,
+.ep-input__wrapper,
+.ep-textarea__inner,
+.ep-button {
+  transition: color 350ms ease, background-color 350ms ease, border-color 350ms ease, box-shadow 350ms ease;
+}
+
+#app,
+.main-container {
+  height: 100%;
+  overflow: hidden;
+  background-color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.01ms !important; }
+}
+
+a {
+  color: var(--ep-color-primary);
+}
+
+code {
+  border-radius: 2px;
+  padding: 2px 4px;
+  background-color: var(--ep-color-primary-light-9);
+  color: var(--ep-color-primary);
+}
+
+#nprogress {
+  pointer-events: none;
+}
+
+#nprogress .bar {
+  background: rgb(13, 148, 136);
+  opacity: 0.75;
+  position: fixed;
+  z-index: 1031;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+}
