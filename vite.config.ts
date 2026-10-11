@@ -9,13 +9,18 @@ import VueRouter from 'unplugin-vue-router/vite'
 import { defineConfig } from 'vite'
 import { defineConfig } from 'vite'
 import glsl from 'vite-plugin-glsl'
-
+import { fileURLToPath, URL } from 'node:url' // 引入这个工具
 
 // https://vitejs.dev/config/
 export default defineConfig({
+    base: '/qianduan/', 
   resolve: {
     alias: {
       '~/': `${path.resolve(__dirname, 'src')}/`,
+        // 👇 2. 让 Vite 也认识 ~/ 或 @/
+      '~': fileURLToPath(new URL('./src', import.meta.url)),
+      // 通常前端更习惯用 @，建议你也加上
+      '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
 
