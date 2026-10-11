@@ -151,7 +151,7 @@ async function callDifyApi() {
       }
     }
 
-  } catch (error) {
+  } catch (error:any) {
     console.error('调用失败:', error);
     errorMsg.value = `调用失败: ${error.message}`;
   } finally {

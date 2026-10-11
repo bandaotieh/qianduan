@@ -160,10 +160,14 @@ onMounted(() => {
   rgbeloader.load('/gaota.hdr',(eveMap) =>{
     //设置球形映射
     eveMap.mapping = THREE.EquirectangularReflectionMapping
-    //设置环境贴图
+    if (scene) {
+        //设置环境贴图
+
     scene.background = eveMap
     //给场景设置环境贴图
     scene.environment = eveMap
+    }
+  
     //设置物体的环境贴图
     planmaterial.envMap = eveMap
 

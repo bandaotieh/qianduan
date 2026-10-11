@@ -258,35 +258,39 @@ const raycaster = new THREE.Raycaster();
 //创建鼠标向量
 const mouse = new THREE.Vector2()
 
+function isColorMaterial(material: THREE.Material): material is THREE.Material & { color: THREE.Color } {
+  return 'color' in material && material.color instanceof THREE.Color
+}
+
 window.addEventListener('click',(e) => {
   // 将鼠标位置归一化为设备坐标。x 和 y 方向的取值范围是 (-1 to +1)
 	mouse.x = ( e.clientX / window.innerWidth ) * 2 - 1;
 	mouse.y = - ( e.clientY / window.innerHeight ) * 2 + 1;
-//通过摄像机和鼠标位置更新射线
-raycaster.setFromCamera(mouse,camera)
+  // 通过摄像机和鼠标位置更新射线
+  raycaster.setFromCamera(mouse,camera)
   //  计算射线与场景中物体的交点（传入需要检测的物体数组或 scene.children）
-  const intersects = raycaster.intersectObjects(scene.children, true); 
+  const intersects = raycaster.intersectObjects(scene.children, true)
   // 3. 如果检测到相交的物体
-  if (intersects.length > 0) {
-    //判断是否点击过
-    if (intersects[0].object.userData._isSelected) {
-       intersects[0].object.material.color.set(
-      intersects[0].object.userData._isColor
-       );
-   intersects[0].object.userData._isSelected = false 
+  const hitObject = intersects[0]?.object
+  if (!(hitObject instanceof THREE.Mesh))
+    return
 
-return
-    }
-//增加属性判断是否点击过
-   intersects[0].object.userData._isSelected = true 
-   //改变颜色
-    intersects[0].object.material.color.set(0xff0000); // 变为红色
-   //保存之前的颜色(
-   intersects[0].object.userData._isColor = intersects[0].object.material.color.getHex()
-   console.log(intersects[0].object.userData._isColor);
-   
+  const colorMaterials = (Array.isArray(hitObject.material) ? hitObject.material : [hitObject.material])
+    .filter(isColorMaterial)
+  if (colorMaterials.length === 0)
+    return
+
+  if (hitObject.userData._isSelected) {
+    colorMaterials.forEach((material, index) => {
+      material.color.set(hitObject.userData._isColor[index])
+    })
+    hitObject.userData._isSelected = false
+    return
   }
-  
+
+  hitObject.userData._isColor = colorMaterials.map(material => material.color.getHex())
+  hitObject.userData._isSelected = true
+  colorMaterials.forEach(material => material.color.set(0xff0000))
 })
 
 

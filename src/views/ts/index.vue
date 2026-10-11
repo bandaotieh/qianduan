@@ -67,9 +67,9 @@
             型声明！
             <div class="size_big">类型总览</div>
             js 中的数据类型<br>
-            <img src="../../assets/images/JS.png" alt="image-JS" style="zoom:100%;"><br>
+            <img src="../../assets/images/js.png" alt="image-JS" style="zoom:100%;"><br>
             TS 中的数据类型<br>
-            <img src="../../assets/images/TS.png" alt="image-TS" style="zoom:100%;"><br>
+            <img src="../../assets/images/ts.png" alt="image-TS" style="zoom:100%;"><br>
             <div style="color: red;">注意点！</div>
             <div>在 JavaScript 中的这些内置构造函数： Number 、 String 、 Boolean ，⽤于
                 创建对应的包装对象， 在⽇常开发时很少使⽤，在 TypeScript 中也是同理，所以

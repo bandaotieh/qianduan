@@ -1,28 +1,34 @@
 import * as THREE from "three";
 import gsap from "gsap";
 export default function modifyCityMaterial(mesh:THREE.Mesh) {
-  mesh.material.onBeforeCompile = (shader:any) => {
-    // console.log(shader.vertexShader);
-    // console.log(shader.fragmentShader);
-    shader.fragmentShader = shader.fragmentShader.replace(
-      "#include <dithering_fragment>",
+  const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+  materials.forEach((material) => {
+    material.onBeforeCompile = (shader: THREE.WebGLProgramParametersWithUniforms) => {
+      // console.log(shader.vertexShader);
+      // console.log(shader.fragmentShader);
+      shader.fragmentShader = shader.fragmentShader.replace(
+        "#include <dithering_fragment>",
+        `
+          #include <dithering_fragment>
+          //#end#
       `
-        #include <dithering_fragment>
-        //#end#
-    `
-    );
-    addGradColor(shader, mesh);
-    addSpread(shader);
-    addLightLine(shader);
-    addToTopLine(shader);
-  };
+      );
+      addGradColor(shader, mesh);
+      addSpread(shader);
+      addLightLine(shader);
+      addToTopLine(shader);
+    };
+  });
 }
 
-export function addGradColor(shader:any, mesh:any) {
+export function addGradColor(shader: THREE.WebGLProgramParametersWithUniforms, mesh: THREE.Mesh) {
   mesh.geometry.computeBoundingBox();
   //   console.log(mesh.geometry.boundingBox);
 
-  let { min, max } = mesh.geometry.boundingBox;
+  const boundingBox = mesh.geometry.boundingBox;
+  if (!boundingBox)
+    throw new Error("Unable to compute the city mesh bounding box.");
+  const { min, max } = boundingBox;
   //   获取物体的高度差
   let uHeight = max.y - min.y;
 
@@ -77,7 +83,7 @@ export function addGradColor(shader:any, mesh:any) {
   );
 }
 // 添加建筑材质光波扩散特效
-export function addSpread(shader:any, center = new THREE.Vector2(0, 0)) {
+export function addSpread(shader: THREE.WebGLProgramParametersWithUniforms, center = new THREE.Vector2(0, 0)) {
   // 设置扩散的中心点
   shader.uniforms.uSpreadCenter = { value: center };
   //   扩散的时间
@@ -119,7 +125,7 @@ export function addSpread(shader:any, center = new THREE.Vector2(0, 0)) {
   });
 }
 
-export function addLightLine(shader:any) {
+export function addLightLine(shader: THREE.WebGLProgramParametersWithUniforms) {
   //   扩散的时间
   shader.uniforms.uLightLineTime = { value: -1500 };
   //   设置条带的宽度
@@ -158,7 +164,7 @@ export function addLightLine(shader:any) {
   });
 }
 
-export function addToTopLine(shader:any) {
+export function addToTopLine(shader: THREE.WebGLProgramParametersWithUniforms) {
   //   扩散的时间
   shader.uniforms.uToTopTime = { value: 0 };
   //   设置条带的宽度

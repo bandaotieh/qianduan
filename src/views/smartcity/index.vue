@@ -29,6 +29,8 @@ interface CitySceneHandle {
   focusAlarm: (alarmId: string) => void
   // 根据事件类别筛选地图标记。
   setAlarmFilter: (filter: AlarmFilter) => void
+    // 将地图相机平滑移回世界坐标原点。
+  focusOrigin: () => void
 }
 
 // 保存子地图组件的实例引用，供面板按钮调用其公开方法。
@@ -143,6 +145,7 @@ function showAllAlarms() {
   sceneRef.value?.setAlarmFilter('all')
   // 将三维地图平滑移动回城市原点。
   sceneRef.value?.focusOrigin()
+
 }
 
 // 页面挂载后立即设置时钟并启动周期更新。
