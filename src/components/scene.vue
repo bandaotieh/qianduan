@@ -12,7 +12,7 @@ import { onMounted, onUnmounted, ref } from 'vue'
 // 导入场景逐帧渲染函数。
 import animate from '../three/animate'
 // 导入场景坐标轴辅助对象。
-import axesHelper from '../three/axesHelper'
+// import axesHelper from '../three/axesHelper'
 // 导入共享三维相机。
 import camera from '../three/camera'
 // 导入相机轨道控制器。
@@ -73,11 +73,11 @@ onMounted(() => {
   // 将 WebGL canvas 插入当前 Vue 组件容器。
   canvasContainer.value.appendChild(renderer.domElement)
   // 将坐标轴辅助对象加入场景，保持项目既有调试行为。
-  scene.add(axesHelper)
+  // scene.add(axesHelper)
   // 创建城市模型，并把地图标记点击转发为 Vue 组件事件。
   cityController = createMesh(alarm => emit('alarmSelect', alarm))
   // 设置城市地图初始相机位置。
-  camera.position.set(-15, 9, -15)
+  camera.position.set(-15, 6, -15)
   // 设置轨道控制器初始观察目标为城市中心。
   controls.target.set(0, 0, 0)
   // 立即同步 OrbitControls 的相机状态。
@@ -104,7 +104,7 @@ onUnmounted(() => {
   // 清除控制器引用，防止重复使用已卸载地图。
   cityController = null
   // 从场景中移除坐标轴辅助对象。
-  scene.remove(axesHelper)
+  // scene.remove(axesHelper)
   // 停止渲染器的动画循环。
   renderer?.setAnimationLoop(null)
   // 释放 WebGL 渲染器资源。

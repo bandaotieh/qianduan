@@ -122,11 +122,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import * as THREE from 'three'
-import { HDRLoader } from 'three/addons/loaders/HDRLoader.js'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
-
-import lightHdrUrl from '/light.hdr?url'
-
 const props = withDefaults(
   defineProps<{
     hdrFile?: string
@@ -136,7 +132,7 @@ const props = withDefaults(
     initialElevationOffsetDeg?: number
   }>(),
   {
-    hdrFile: lightHdrUrl,
+    hdrFile: `${import.meta.env.BASE_URL}light.png`,
     initialAzimuthDeg: -80,
     initialElevationDeg: -10,
     initialAzimuthOffsetDeg: 0,
@@ -227,28 +223,27 @@ onMounted(() => {
   camera.lookAt(0, 0, 0)
   controls.target.set(0, 0, 0)
 
-  // ----- 加载 HDR 纹理（全景背景）并保留引用以便采样颜色 -----
-  let hdrEquirect: THREE.DataTexture | null = null
+  // ----- 加载全景纹理并保留像素以便采样海面颜色 -----
+  let panoramaPixels: Uint8ClampedArray | null = null
+  let panoramaWidth = 0
+  let panoramaHeight = 0
 
-  // 从 equirectangular HDR DataTexture 中采样指定经纬度周围的平均颜色
-  function sampleEquirectangularHDRColor(
-    texture: any,
+  // 从 equirectangular PNG 中采样指定经纬度周围的平均颜色
+  function sampleEquirectangularPNGColor(
+    pixels: Uint8ClampedArray,
+    width: number,
+    height: number,
     azimuthDeg: number,
     elevationDeg: number,
     sampleRadiusPx = 4,
   ) {
-    if (!texture || !texture.image || !texture.image.data) return null
-    const img = texture.image
-    const data = img.data as Float32Array | Uint8Array
-    const w = img.width
-    const h = img.height
     // azimuth: longitude 0..360, elevation: -90..90
     const theta = THREE.MathUtils.degToRad(azimuthDeg)
     const phi = THREE.MathUtils.degToRad(90 - elevationDeg)
     const u = (theta + Math.PI) / (2 * Math.PI)
     const v = phi / Math.PI
-    const cx = Math.floor(u * w) % w
-    const cy = Math.floor(v * h)
+    const cx = Math.floor(u * width) % width
+    const cy = Math.floor(v * height)
     let r = 0,
       g = 0,
       b = 0,
@@ -256,13 +251,13 @@ onMounted(() => {
     for (let dy = -sampleRadiusPx; dy <= sampleRadiusPx; dy++) {
       for (let dx = -sampleRadiusPx; dx <= sampleRadiusPx; dx++) {
         let sx = cx + dx
-        if (sx < 0) sx += w
-        if (sx >= w) sx -= w
-        let sy = THREE.MathUtils.clamp(cy + dy, 0, h - 1)
-        const idx = (sy * w + sx) * 3
-        r += data[idx]
-        g += data[idx + 1]
-        b += data[idx + 2]
+        if (sx < 0) sx += width
+        if (sx >= width) sx -= width
+        const sy = THREE.MathUtils.clamp(cy + dy, 0, height - 1)
+        const idx = (sy * width + sx) * 4
+        r += pixels[idx]
+        g += pixels[idx + 1]
+        b += pixels[idx + 2]
         count++
       }
     }
@@ -270,21 +265,27 @@ onMounted(() => {
     r /= count
     g /= count
     b /= count
-    return new THREE.Color(r, g, b)
+    return new THREE.Color().setRGB(r / 255, g / 255, b / 255, THREE.SRGBColorSpace)
   }
 
-  function applySeaColorFromHDR() {
-    if (!hdrEquirect || !seaMesh) return
+  function applySeaColorFromPanorama() {
+    if (!panoramaPixels || !seaMesh) return
     // 采样方向：使用当前初始视角的方位（水平）并以地平线高度采样海面颜色
     const sampleAz = (props.initialAzimuthDeg ?? 0) + (props.initialAzimuthOffsetDeg ?? 0)
     const sampleElev = 0 // 地平线附近
-    const col = sampleEquirectangularHDRColor(hdrEquirect, sampleAz, sampleElev, 6)
+    const col = sampleEquirectangularPNGColor(
+      panoramaPixels,
+      panoramaWidth,
+      panoramaHeight,
+      sampleAz,
+      sampleElev,
+      6,
+    )
     if (col) {
       const mat = seaMesh!.material as THREE.MeshPhysicalMaterial
       const brightSea = new THREE.Color('#5873DC')
       const deepSea = new THREE.Color('#1A1F49')
 
-      // HDR 采样值可能极亮，直接用会把海面压成白色，先限制亮度并映射到目标海洋色板。
       const maxChannel = Math.max(col.r, col.g, col.b, 0.001)
       const luminanceFactor = THREE.MathUtils.clamp(maxChannel / 2.2, 0, 1)
       const baseColor = deepSea.clone().lerp(brightSea, luminanceFactor)
@@ -299,14 +300,24 @@ onMounted(() => {
     }
   }
 
-  new HDRLoader().load(props.hdrFile, (texture) => {
+  new THREE.TextureLoader().load(props.hdrFile, (texture) => {
+    texture.colorSpace = THREE.SRGBColorSpace
     texture.mapping = THREE.EquirectangularReflectionMapping
     scene.background = texture
     scene.environment = texture
-    // 存储以便后续采样
-    hdrEquirect = texture as unknown as THREE.DataTexture
+    const image = texture.image as HTMLImageElement
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.min(image.naturalWidth, 1024)
+    canvas.height = Math.max(1, Math.round(image.naturalHeight * canvas.width / image.naturalWidth))
+    const context = canvas.getContext('2d')
+    if (!context) throw new Error('Unable to create canvas context for panorama sampling')
+    context.drawImage(image, 0, 0)
+    const imageData = context.getImageData(0, 0, canvas.width, canvas.height)
+    panoramaPixels = imageData.data
+    panoramaWidth = imageData.width
+    panoramaHeight = imageData.height
     // 若 seaMesh 已创建则立刻应用颜色
-    applySeaColorFromHDR()
+    applySeaColorFromPanorama()
   })
 
   // ----- 添加一些基础环境光（辅助海面反射）-----
@@ -376,8 +387,8 @@ onMounted(() => {
    }
  }
   createSea()
-  // HDR 可能已加载，尝试从 HDR 采样并设置海面颜色
-  try { applySeaColorFromHDR() } catch (e) { /* ignore if not ready */ }
+  // 全景纹理可能已加载，尝试采样并设置海面颜色
+  try { applySeaColorFromPanorama() } catch (e) { /* ignore if not ready */ }
 
   // ========== 2. 创建烟雾粒子 ==========
   let smokePoints: THREE.Points | null = null

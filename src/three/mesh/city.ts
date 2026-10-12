@@ -53,7 +53,8 @@ export default function createCity(onAlarmClick: (alarm: CityAlarm) => void): Ci
   // 加载 public 目录中的城市三维模型。
   gltfLoader.load(
     // 使用从站点根目录开始的模型 URL，兼容打包后的 public 资源。
-    '/city2.glb',
+    // '/city2.glb',
+    `${import.meta.env.BASE_URL}city2.glb`,
     // 模型加载成功后设置建筑材质并创建附加效果。
     (gltf) => {
       // 如果加载完成前地图已经卸载，就不再创建场景对象。
